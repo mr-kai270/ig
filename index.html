@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instagram Video Downloader</title>
+<style>
+  :root { --bg:#fafafa; --card:#fff; --text:#1c1c1e; --muted:#6b7280; --border:#e5e7eb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111; --card:#1c1c1e; --text:#f5f5f5; --muted:#9ca3af; --border:#333; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:24px 16px; }
+  .card { width:100%; max-width:520px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  p.sub { color:var(--muted); margin:0 0 20px; font-size:14px; }
+  input { width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text); font-size:15px; }
+  button { margin-top:12px; width:100%; padding:12px; border:0; border-radius:10px; font-size:15px; font-weight:600; color:#fff; cursor:pointer; background:linear-gradient(45deg,#f09433,#dc2743,#bc1888); }
+  button:disabled { opacity:.6; cursor:wait; }
+  .msg { margin-top:14px; font-size:14px; color:#dc2626; }
+  .result { margin-top:18px; }
+  .result img { width:100%; border-radius:10px; max-height:320px; object-fit:cover; }
+  .result a { display:block; text-align:center; text-decoration:none; margin-top:12px; padding:12px; border-radius:10px; background:#16a34a; color:#fff; font-weight:600; }
+  small { display:block; margin-top:18px; color:var(--muted); font-size:12px; line-height:1.4; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Instagram Video Downloader</h1>
+  <p class="sub">Paste the link of a public Instagram video or reel.</p>
+  <input id="url" placeholder="https://www.instagram.com/reel/..." autocomplete="off">
+  <button id="go">Get video</button>
+  <div id="msg" class="msg"></div>
+  <div id="result" class="result"></div>
+  <small>Only download content you own or have permission to use. Respect creators' rights and Instagram's Terms.</small>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+$("go").onclick = async () => {
+  const url = $("url").value.trim();
+  $("msg").textContent = ""; $("result").innerHTML = "";
+  if (!url) { $("msg").textContent = "Please paste a link first."; return; }
+  $("go").disabled = true; $("go").textContent = "Fetching...";
+  try {
+    const r = await fetch("/api/info", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ url }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "Something went wrong.");
+    const box = $("result");
+    if (d.thumbnail) { const img = document.createElement("img"); img.src = d.thumbnail; img.referrerPolicy = "no-referrer"; box.appendChild(img); }
+    const t = document.createElement("div"); t.style.marginTop = "10px"; t.textContent = d.title; box.appendChild(t);
+    const a = document.createElement("a"); a.href = "/api/download?url=" + encodeURIComponent(url); a.textContent = "Download video"; box.appendChild(a);
+  } catch (e) { $("msg").textContent = e.message; }
+  $("go").disabled = false; $("go").textContent = "Get video";
+};
+</script>
+</body>
+</html>
